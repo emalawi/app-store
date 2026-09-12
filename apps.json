@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Your App Name",
+    "description": "A short description of what this app does.",
+    "category": "Utilities",
+    "image": "https://via.placeholder.com/80",
+    "youtube": "",
+    "apk": "https://huggingface.co/datasets/Emalawi19/app-store-files/resolve/main/yourapp.apk"
+  }
+]

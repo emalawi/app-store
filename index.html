@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My App Store</title>
+<title>Emalawi19</title>
 <style>
   body {
     background-color: #4b3621;
@@ -45,9 +45,19 @@
     font-size: 18px;
     margin-bottom: 5px;
   }
+  .app-category {
+    font-size: 12px;
+    color: #d8c3a5;
+    margin-bottom: 8px;
+  }
+  .app-desc {
+    font-size: 13px;
+    color: #e8dcc9;
+    margin-bottom: 10px;
+  }
   .download-btn {
     display: inline-block;
-    margin-top: 10px;
+    margin-top: 5px;
     background-color: #a9744f;
     color: white;
     padding: 10px 18px;
@@ -60,26 +70,46 @@
   }
   .install-note {
     margin-top: 10px;
-    font-size: 12px;
+    font-size: 11px;
     color: #d8c3a5;
     line-height: 1.4;
+  }
+  .yt-link {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #f0c987;
+    text-decoration: none;
   }
 </style>
 </head>
 <body>
 
-<header>My App Store</header>
+<header>Emalawi19</header>
 
-<div class="app-grid">
+<div class="app-grid" id="app-grid"></div>
 
-  <div class="app-card">
-    <img src="https://via.placeholder.com/80" alt="App Icon">
-    <div class="app-name">Your App Name</div>
-    <a class="download-btn" href="https://huggingface.co/datasets/Emalawi19/app-store-files/resolve/main/yourapp.apk" download>Download</a>
-    <div class="install-note">After downloading, tap the file to install. Allow "install unknown apps" if prompted.</div>
-  </div>
-
-</div>
+<script>
+  fetch('apps.json')
+    .then(res => res.json())
+    .then(apps => {
+      const grid = document.getElementById('app-grid');
+      apps.forEach(app => {
+        const card = document.createElement('div');
+        card.className = 'app-card';
+        card.innerHTML = `
+          <img src="${app.image}" alt="${app.name} icon">
+          <div class="app-name">${app.name}</div>
+          <div class="app-category">${app.category}</div>
+          <div class="app-desc">${app.description}</div>
+          <a class="download-btn" href="${app.apk}" download>Download</a>
+          <div class="install-note">After downloading, tap the file to install. Allow "install unknown apps" if prompted.</div>
+          ${app.youtube ? `<a class="yt-link" href="${app.youtube}" target="_blank">Watch video ▶</a>` : ''}
+        `;
+        grid.appendChild(card);
+      });
+    });
+</script>
 
 </body>
 </html>
