@@ -60,6 +60,12 @@
     margin-top: 12px;
     font-size: 13px;
     text-align: center;
+    white-space: pre-wrap;
+  }
+  .hint {
+    font-size: 11px;
+    color: #d8c3a5;
+    margin-top: 3px;
   }
 </style>
 </head>
@@ -69,6 +75,10 @@
 
 <div class="form-box">
   <form id="upload-form">
+    <label>Hugging Face Write Token</label>
+    <input type="password" id="hf-token" required>
+    <div class="hint">Get this from huggingface.co → Settings → Access Tokens</div>
+
     <label>App Name</label>
     <input type="text" id="app-name" required>
 
@@ -87,15 +97,50 @@
     <label>APK File</label>
     <input type="file" id="app-apk" accept=".apk" required>
 
-    <button type="submit">Upload App</button>
+    <button type="submit">Upload to Hugging Face</button>
   </form>
   <div id="status"></div>
 </div>
 
 <script>
-  document.getElementById('upload-form').addEventListener('submit', function(e) {
+  const HF_REPO = "Emalawi19/app-store-files";
+
+  async function uploadFileToHF(file, token, statusEl) {
+    const url = `https://huggingface.co/api/datasets/${HF_REPO}/upload/main/${encodeURIComponent(file.name)}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/octet-stream"
+      },
+      body: arrayBuffer
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Upload failed for ${file.name}: ${res.status} ${text}`);
+    }
+    return `https://huggingface.co/datasets/${HF_REPO}/resolve/main/${encodeURIComponent(file.name)}`;
+  }
+
+  document.getElementById('upload-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    document.getElementById('status').innerText = "Upload logic not connected yet — coming in the next step.";
+    const statusEl = document.getElementById('status');
+    const token = document.getElementById('hf-token').value.trim();
+    const imageFile = document.getElementById('app-image').files[0];
+    const apkFile = document.getElementById('app-apk').files[0];
+
+    try {
+      statusEl.innerText = "Uploading image...";
+      const imageUrl = await uploadFileToHF(imageFile, token, statusEl);
+
+      statusEl.innerText = "Uploading APK...";
+      const apkUrl = await uploadFileToHF(apkFile, token, statusEl);
+
+      statusEl.innerText = `Done!\nImage: ${imageUrl}\nAPK: ${apkUrl}\n\n(Next step will save this into apps.json automatically)`;
+    } catch (err) {
+      statusEl.innerText = "Error: " + err.message;
+    }
   });
 </script>
 
