@@ -12,10 +12,7 @@
     margin: 0;
     padding: 20px;
   }
-  h1 {
-    text-align: center;
-    color: #f5e9da;
-  }
+  h1 { text-align: center; }
   .form-box {
     max-width: 400px;
     margin: 0 auto;
@@ -24,13 +21,8 @@
     border-radius: 12px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.5);
   }
-  label {
-    display: block;
-    margin-top: 12px;
-    margin-bottom: 4px;
-    font-size: 14px;
-  }
-  input, textarea, select {
+  label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 14px; }
+  input, textarea {
     width: 100%;
     padding: 8px;
     border-radius: 6px;
@@ -38,10 +30,7 @@
     box-sizing: border-box;
     font-size: 14px;
   }
-  textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
+  textarea { resize: vertical; min-height: 60px; }
   button {
     margin-top: 18px;
     width: 100%;
@@ -53,20 +42,9 @@
     font-weight: bold;
     font-size: 15px;
   }
-  button:active {
-    background-color: #8a5d3b;
-  }
-  #status {
-    margin-top: 12px;
-    font-size: 13px;
-    text-align: center;
-    white-space: pre-wrap;
-  }
-  .hint {
-    font-size: 11px;
-    color: #d8c3a5;
-    margin-top: 3px;
-  }
+  button:active { background-color: #8a5d3b; }
+  #status { margin-top: 12px; font-size: 13px; text-align: center; white-space: pre-wrap; }
+  .hint { font-size: 11px; color: #d8c3a5; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -77,7 +55,11 @@
   <form id="upload-form">
     <label>Hugging Face Write Token</label>
     <input type="password" id="hf-token" required>
-    <div class="hint">Get this from huggingface.co → Settings → Access Tokens</div>
+    <div class="hint">huggingface.co → Settings → Access Tokens</div>
+
+    <label>GitHub Personal Access Token</label>
+    <input type="password" id="gh-token" required>
+    <div class="hint">github.com → Settings → Developer settings → Tokens (classic), repo scope</div>
 
     <label>App Name</label>
     <input type="text" id="app-name" required>
@@ -86,26 +68,28 @@
     <textarea id="app-description" required></textarea>
 
     <label>Category</label>
-    <input type="text" id="app-category" placeholder="e.g. Utilities, Games" required>
+    <input type="text" id="app-category" required>
 
     <label>App Icon / Picture</label>
     <input type="file" id="app-image" accept="image/*" required>
 
     <label>YouTube Video Link (optional)</label>
-    <input type="url" id="app-youtube" placeholder="https://youtube.com/...">
+    <input type="url" id="app-youtube">
 
     <label>APK File</label>
     <input type="file" id="app-apk" accept=".apk" required>
 
-    <button type="submit">Upload to Hugging Face</button>
+    <button type="submit">Upload App</button>
   </form>
   <div id="status"></div>
 </div>
 
 <script>
   const HF_REPO = "Emalawi19/app-store-files";
+  const GH_OWNER = "emalawi";
+  const GH_REPO = "app-store";
 
-  async function uploadFileToHF(file, token, statusEl) {
+  async function uploadFileToHF(file, token) {
     const url = `https://huggingface.co/api/datasets/${HF_REPO}/upload/main/${encodeURIComponent(file.name)}`;
     const arrayBuffer = await file.arrayBuffer();
     const res = await fetch(url, {
@@ -116,28 +100,77 @@
       },
       body: arrayBuffer
     });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Upload failed for ${file.name}: ${res.status} ${text}`);
-    }
+    if (!res.ok) throw new Error(`HF upload failed for ${file.name}: ${res.status} ${await res.text()}`);
     return `https://huggingface.co/datasets/${HF_REPO}/resolve/main/${encodeURIComponent(file.name)}`;
+  }
+
+  function b64EncodeUnicode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  async function getAppsJson(ghToken) {
+    const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/apps.json`;
+    const res = await fetch(url, { headers: { "Authorization": `token ${ghToken}` } });
+    if (!res.ok) throw new Error("Could not fetch apps.json: " + res.status);
+    const data = await res.json();
+    const content = decodeURIComponent(escape(atob(data.content)));
+    return { apps: JSON.parse(content), sha: data.sha };
+  }
+
+  async function saveAppsJson(ghToken, apps, sha) {
+    const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/apps.json`;
+    const content = b64EncodeUnicode(JSON.stringify(apps, null, 2));
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${ghToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "Add new app via admin panel",
+        content: content,
+        sha: sha
+      })
+    });
+    if (!res.ok) throw new Error("Could not save apps.json: " + res.status + " " + await res.text());
   }
 
   document.getElementById('upload-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const statusEl = document.getElementById('status');
-    const token = document.getElementById('hf-token').value.trim();
+    const hfToken = document.getElementById('hf-token').value.trim();
+    const ghToken = document.getElementById('gh-token').value.trim();
     const imageFile = document.getElementById('app-image').files[0];
     const apkFile = document.getElementById('app-apk').files[0];
 
     try {
-      statusEl.innerText = "Uploading image...";
-      const imageUrl = await uploadFileToHF(imageFile, token, statusEl);
+      statusEl.innerText = "Uploading image to Hugging Face...";
+      const imageUrl = await uploadFileToHF(imageFile, hfToken);
 
-      statusEl.innerText = "Uploading APK...";
-      const apkUrl = await uploadFileToHF(apkFile, token, statusEl);
+      statusEl.innerText = "Uploading APK to Hugging Face...";
+      const apkUrl = await uploadFileToHF(apkFile, hfToken);
 
-      statusEl.innerText = `Done!\nImage: ${imageUrl}\nAPK: ${apkUrl}\n\n(Next step will save this into apps.json automatically)`;
+      statusEl.innerText = "Fetching current app list...";
+      const { apps, sha } = await getAppsJson(ghToken);
+
+      const newApp = {
+        name: document.getElementById('app-name').value.trim(),
+        description: document.getElementById('app-description').value.trim(),
+        category: document.getElementById('app-category').value.trim(),
+        image: imageUrl,
+        youtube: document.getElementById('app-youtube').value.trim(),
+        apk: apkUrl,
+        likes: 0,
+        downloads: 0,
+        comments: []
+      };
+      apps.push(newApp);
+
+      statusEl.innerText = "Saving updated app list to GitHub...";
+      await saveAppsJson(ghToken, apps, sha);
+
+      statusEl.innerText = "Success! App added. It will appear on the homepage shortly.";
+      e.target.reset();
     } catch (err) {
       statusEl.innerText = "Error: " + err.message;
     }
