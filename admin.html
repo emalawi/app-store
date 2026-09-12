@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emalawi19 Admin</title>
+<style>
+  body {
+    background-color: #4b3621;
+    color: #f5e9da;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #f5e9da;
+  }
+  .form-box {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #5c4033;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+  }
+  label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  button {
+    margin-top: 18px;
+    width: 100%;
+    padding: 12px;
+    background-color: #a9744f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 15px;
+  }
+  button:active {
+    background-color: #8a5d3b;
+  }
+  #status {
+    margin-top: 12px;
+    font-size: 13px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Emalawi19 — Add New App</h1>
+
+<div class="form-box">
+  <form id="upload-form">
+    <label>App Name</label>
+    <input type="text" id="app-name" required>
+
+    <label>Description</label>
+    <textarea id="app-description" required></textarea>
+
+    <label>Category</label>
+    <input type="text" id="app-category" placeholder="e.g. Utilities, Games" required>
+
+    <label>App Icon / Picture</label>
+    <input type="file" id="app-image" accept="image/*" required>
+
+    <label>YouTube Video Link (optional)</label>
+    <input type="url" id="app-youtube" placeholder="https://youtube.com/...">
+
+    <label>APK File</label>
+    <input type="file" id="app-apk" accept=".apk" required>
+
+    <button type="submit">Upload App</button>
+  </form>
+  <div id="status"></div>
+</div>
+
+<script>
+  document.getElementById('upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('status').innerText = "Upload logic not connected yet — coming in the next step.";
+  });
+</script>
+
+</body>
+</html>
